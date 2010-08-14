@@ -83,6 +83,7 @@ static const char *pagename;
 
 static const char *wadfiles[MAXWADFILES + 1] =
 {
+	"usb:/apps/hereticwii/heretic.wad",
 	"sd:/apps/hereticwii/heretic.wad",
 	"texture1.lmp",
 	"texture2.lmp",
