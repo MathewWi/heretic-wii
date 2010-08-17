@@ -250,6 +250,8 @@ int main(int argc, char **argv)
 
 	letter_size(12, 24);
 
+    PAD_Init();
+
 	WPAD_Init();
 	WPAD_SetIdleTimeout(60*5); // 5 minutes 
 
@@ -454,7 +456,6 @@ paleta2[0]=0x00000000;
 */
 
 int wiimote_scr_info=0;
-int no_nunchuk=0;
 
 static int use_cheat=0;
 
@@ -502,25 +503,13 @@ void wii_scr_update()
 
 	SetTexture(NULL);
 
-	
-	if(no_nunchuk)
-		{
-		wiimote_scr_info=2;
-		PX=0;
-		PY=16;
-		letter_size(12, 32);
-		bkcolor=0x4000f000;
-		autocenter=1;
-		if(!((blink>>4) & 1)) s_printf ("Connect Wiimote+Nunchuk (press '2' for info)");
-		autocenter=0;
-		bkcolor=0;
-		blink++;
-		}
 
 	
 	if(wiimote_scr_info & 1)
 		{
-		SetTexture(NULL);
+		//Rewrite this with a proper Wii settings GUI later --Arikado
+		
+		/*SetTexture(NULL);
 		DrawFillBox(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, (use_cheat>4) ? 0xff8f8f00 : 0xffff0000);
 
 		PY=8;
@@ -574,7 +563,7 @@ void wii_scr_update()
 		PY+=32;PX=8;
 		if(!((blink>>4) & 1)) s_printf("Press '2' to exit");
 		blink++;
-		autocenter=0;
+		autocenter=0;*/
 
 		}
 	
@@ -771,6 +760,11 @@ void I_StartFrame (void)
 
 	static int w_jx=1,w_jy=1;
 
+    PAD_ScanPads();
+	s32 pad_stickx = PAD_StickX(0);
+	s32 pad_sticky = PAD_StickY(0);
+	s32 pad_substickx = PAD_SubStickX(0);
+	s32 pad_substicky = PAD_SubStickY(0);
 
 	WPAD_ScanPads();
 
@@ -781,7 +775,7 @@ void I_StartFrame (void)
 	ev.data3 =  0;
 
 
-	if(wmote_datas)
+	/*if(wmote_datas)
 		{
 		if((new_pad & WPAD_BUTTON_B) && (wiimote_scr_info & 1)) use_cheat++;
 
@@ -789,13 +783,14 @@ void I_StartFrame (void)
 			{
 			wiimote_scr_info^=1;	
 			}
-		}
+		}*/
+		
+	wiimote_scr_info&=1;
 
-	no_nunchuk=1;
+    //Wiimote + Nunchuk Controls
+	
 	if(wmote_datas && wmote_datas->exp.type==WPAD_EXP_NUNCHUK)
 		{
-		no_nunchuk=0;
-		wiimote_scr_info&=1;
 
 		// fly
 		if(old_pad & WPAD_NUNCHUK_BUTTON_C)
@@ -864,6 +859,64 @@ void I_StartFrame (void)
 		D_PostEvent (&ev);
 
 		}
+	//End Wiimote and Nunchuk Controls
+	
+	
+	//GC Controls
+	
+		// Menu
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_START) k_esc=1;
+
+		// Movement
+		//Down
+		if(pad_sticky < -20)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jy & 2) k_down=1; w_jy&= ~2;ev.data3 = 1;}
+        else w_jy|=2;
+		//Up
+		if(pad_sticky > 20)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jy & 1) k_up=1; w_jy&= ~1; ev.data3 = -1;} 
+		else w_jy|=1;
+		if(pad_stickx < -20) {k_left=1; k_alt=1;} //Left Strafe
+		if(pad_stickx > 20)  {k_right=1;k_alt=1;} // Right Strafe
+		
+		//Turning
+		//Right
+		if(pad_substickx > 20)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jx & 1) k_right=1; w_jx&= ~1; ev.data2 = 1;} 
+		else w_jx|=1;
+		//Left
+		if(pad_substickx < -20)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jx & 2) k_left=1; w_jx&= ~2;ev.data2 = -1;} 
+		else w_jx|=2;
+		//Up
+		if(pad_substicky < -20) k_del=1;
+		//Down
+		if(pad_substicky > 20) k_pag_down=1;
+
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_Y || PAD_ButtonsHeld(0)&PAD_BUTTON_Y) ev.data1|=4; // Run
+
+		if(PAD_ButtonsDown(0)&PAD_TRIGGER_Z) k_tab=1; //Toggle Map
+
+		// Change weapon
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_LEFT)  k_1=1;
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_RIGHT) k_2=1;
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_UP)    k_3=1;
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_DOWN)  k_4=1;
+
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_X)	 {k_enter=1;}  // Use Object
+		
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_B) {ev.data1|=2;}  // Open
+		
+		if(PAD_ButtonsDown(0)&PAD_BUTTON_A) ev.data1|=1; // Fire
+			
+
+		if(PAD_ButtonsDown(0)&PAD_TRIGGER_R) k_leftsel=1; // Select left object
+		if(PAD_ButtonsDown(0)&PAD_TRIGGER_L) k_rightsel=1; // Select right object
+
+		D_PostEvent (&ev);
+	
+	//End GC Controls
+	
 
 	// jump
 	event.data1 = '/';
