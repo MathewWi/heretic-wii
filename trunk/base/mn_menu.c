@@ -968,10 +968,24 @@ static void MN_LoadSlotText(void)
 	int count;
 	int i;
 	char name[MAX_OSPATH];
+	
+	//Figure out save path
+	FILE * fp2;
+	char *SavePath;
+	fp2 = fopen("sd:/apps/hereticwii/heretic.wad", "rb");
+	if(fp2)
+	SavePath = "sd:/apps/hereticwii/hticsav";
+	if(!fp2){
+	fp2 = fopen("usb:/apps/hereticwii/heretic.wad", "rb");
+	}
+	if(fp2 && !SavePath)
+	SavePath = "usb:/apps/hereticwii/hticsav";
+	
+	fclose(fp2);
 
 	for (i = 0; i < 6; i++)
 	{
-		snprintf(name, sizeof(name), "%s%s%d.hsg", basePath, SAVEGAMENAME, i);
+		snprintf(name, sizeof(name), "%s%s%d.hsg", basePath, SavePath, i);
 		fp = fopen(name, "rb+");
 		if (!fp)
 		{
