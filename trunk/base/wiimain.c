@@ -861,6 +861,72 @@ void I_StartFrame (void)
 		}
 	//End Wiimote and Nunchuk Controls
 	
+	//Classic Controller Controls
+	
+		if(wmote_datas && wmote_datas->exp.type==WPAD_EXP_CLASSIC)
+		{
+
+		// Menu
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_HOME) k_esc=1;
+
+		// Movement
+		//Down
+		if((wmote_datas->exp.classic.ljs.ang>=180-45 && wmote_datas->exp.classic.ljs.ang<=180+45) && wmote_datas->exp.classic.ljs.mag>=0.9)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jy & 2) k_down=1; w_jy&= ~2;ev.data3 = 1;}
+        else w_jy|=2;
+		//Up
+		if((wmote_datas->exp.classic.ljs.ang>=360-45 || wmote_datas->exp.classic.ljs.ang<=45) && wmote_datas->exp.classic.ljs.mag>=0.9)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jy & 1) k_up=1; w_jy&= ~1; ev.data3 = -1;} 
+		else w_jy|=1;
+		//Left Strafe
+		if((wmote_datas->exp.classic.ljs.ang>=270-45 && wmote_datas->exp.classic.ljs.ang<=270+45) && wmote_datas->exp.classic.ljs.mag>=0.9)
+			{k_left=1; k_alt=1;}
+		//Right Strafe
+		if((wmote_datas->exp.classic.ljs.ang>=90-45 && wmote_datas->exp.classic.ljs.ang<=90+45) && wmote_datas->exp.classic.ljs.mag>=0.9) 
+			{k_right=1;k_alt=1;}
+		
+		//Turning
+		//Right
+		if((wmote_datas->exp.classic.rjs.ang>=90-45 && wmote_datas->exp.classic.rjs.ang<=90+45) && wmote_datas->exp.classic.rjs.mag>=0.9)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jx & 1) k_right=1; w_jx&= ~1; ev.data2 = 1;} 
+		else w_jx|=1;
+		//Left
+		if((wmote_datas->exp.classic.rjs.ang>=270-45 && wmote_datas->exp.classic.rjs.ang<=270+45) && wmote_datas->exp.classic.rjs.mag>=0.9)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jx & 2) k_left=1; w_jx&= ~2;ev.data2 = -1;} 
+		else w_jx|=2;
+		//Up
+		if((wmote_datas->exp.classic.rjs.ang>=360-45 || wmote_datas->exp.classic.rjs.ang<=45) && wmote_datas->exp.classic.rjs.mag>=0.9)
+			k_pag_down=1;
+		//Down
+		if((wmote_datas->exp.classic.rjs.ang>=180-45 && wmote_datas->exp.classic.rjs.ang<=180+45) && wmote_datas->exp.classic.rjs.mag>=0.9)
+		    k_del=1;
+
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_X || WPAD_ButtonsHeld(0)&WPAD_CLASSIC_BUTTON_X) ev.data1|=4; // Run
+
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_ZR) k_tab=1; //Toggle Map
+
+		// Change weapon
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_LEFT)  k_1=1;
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_RIGHT) k_2=1;
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_UP)    k_3=1;
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_DOWN)  k_4=1;
+
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_Y)	 {k_enter=1;}  // Use Object
+		
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_A) {ev.data1|=2;}  // Open
+		
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_B) ev.data1|=1; // Fire
+			
+
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_FULL_R) k_leftsel=1; // Select left object
+		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_FULL_L) k_rightsel=1; // Select right object
+
+		D_PostEvent (&ev);
+
+		}
+	
+	//End Classic Controller Controls
+	
 	
 	//GC Controls
 	
