@@ -10,6 +10,8 @@
 
 // HEADER FILES ------------------------------------------------------------
 
+#include <fat.h>
+
 #include "h2stdinc.h"
 #include "doomdef.h"
 #include "p_local.h"
@@ -83,12 +85,24 @@ static byte *SavePtr;
 
 void SV_SaveGame(int slot, const char *description)
 {
+    //Figure out save path
+	FILE * fp2;
+	char *SavePath;
+	fp2 = fopen("sd:/apps/hereticwii/heretic.wad", "rb");
+	if(fp2)
+	SavePath = "sd:/apps/hereticwii/hticsav";
+	if(!fp2){
+	fp2 = fopen("usb:/apps/hereticwii/heretic.wad", "rb");
+	}
+	if(fp2 && !SavePath)
+	SavePath = "usb:/apps/hereticwii/hticsav";
+
 	int i;
 	char fileName[MAX_OSPATH];
 	char verString[SAVEVERSIONSIZE];
 
 	snprintf(fileName, sizeof(fileName), "%s%s%d.hsg",
-		 basePath, SAVEGAMENAME, slot);
+		 basePath, SavePath, slot);
 	OpenStreamOut(fileName);
 	StreamOutBuffer(description, SAVESTRINGSIZE);
 	memset(verString, 0, sizeof(verString));
@@ -119,13 +133,27 @@ void SV_SaveGame(int slot, const char *description)
 
 void SV_LoadGame(int slot)
 {
+    //Figure out save path
+	FILE * fp2;
+	char *SavePath;
+	fp2 = fopen("sd:/apps/hereticwii/heretic.wad", "rb");
+	if(fp2)
+	SavePath = "sd:/apps/hereticwii/hticsav";
+	if(!fp2){
+	fp2 = fopen("usb:/apps/hereticwii/heretic.wad", "rb");
+	}
+	if(fp2 && !SavePath)
+	SavePath = "usb:/apps/hereticwii/hticsav";
+	
+	fclose(fp2);
+
 	int i;
 	int a, b, c;
 	char fileName[MAX_OSPATH];
 	char vcheck[SAVEVERSIONSIZE];
 
 	snprintf(fileName, sizeof(fileName), "%s%s%d.hsg",
-			 basePath, SAVEGAMENAME, slot);
+			 basePath, SavePath, slot);
 	M_ReadFile(fileName, &SaveBuffer);
 	SavePtr = (byte *)SaveBuffer + SAVESTRINGSIZE;	// Skip the description field
 	memset(vcheck, 0, sizeof(vcheck));
