@@ -255,7 +255,7 @@ int main(int argc, char **argv)
 	WPAD_Init();
 	WPAD_SetIdleTimeout(60*5); // 5 minutes 
 
-	WPAD_SetDataFormat(WPAD_CHAN_ALL, WPAD_FMT_BTNS); // ajusta el formato para acelerometros en todos los wiimotes
+	WPAD_SetDataFormat(WPAD_CHAN_ALL, WPAD_FMT_BTNS_ACC_IR); // ajusta el formato para acelerometros en todos los wiimotes
 
 	if(__io_wiisd.startup())
 		{
@@ -494,6 +494,12 @@ void wii_scr_update()
 	SetTexture(&text_scr);
 
 	DrawFillBox(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, MenuActive ? 0xffa0a0a0 :0xffffffff); // reduce bright if Menu is active
+	
+	//Draw crosshair if using IR
+	if(wmote_datas && wmote_datas->exp.type==WPAD_EXP_NUNCHUK){
+	SetTexture(NULL);
+	DrawRoundFillBox(wmote_datas->ir.x, wmote_datas->ir.y, 20, 20, 0, 0xffffffff);
+	}
 
 	CreateTexture(&text_scr2, TILE_SRGBA8 , wii_scr2, TEXT_W , TEXT_H, 0);
 
@@ -503,11 +509,13 @@ void wii_scr_update()
 
 	SetTexture(NULL);
 
-
 	
 	if(wiimote_scr_info & 1)
 		{
 		//Rewrite this with a proper Wii settings GUI later --Arikado
+		
+		SetTexture(NULL);
+		DrawFillBox(wmote_datas->ir.x, wmote_datas->ir.y, 40, 40, 0, 0xffffffff);
 		
 		/*SetTexture(NULL);
 		DrawFillBox(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, (use_cheat>4) ? 0xff8f8f00 : 0xffff0000);
@@ -759,6 +767,8 @@ void I_StartFrame (void)
 	int k_1=0,k_2=0,k_3=0,k_4=0,k_fly=0;
 
 	static int w_jx=1,w_jy=1;
+	
+	ir_t * ir;
 
     PAD_ScanPads();
 	s32 pad_stickx = PAD_StickX(0);
@@ -769,13 +779,14 @@ void I_StartFrame (void)
 	WPAD_ScanPads();
 
 	wiimote_read();
+	WPAD_IR(WPAD_CHAN_0, &wmote_datas->ir);
 	ev.type = ev_joystick;
 	ev.data1 =  0;
 	ev.data2 =  0;
 	ev.data3 =  0;
 
 
-	/*if(wmote_datas)
+	if(wmote_datas)
 		{
 		if((new_pad & WPAD_BUTTON_B) && (wiimote_scr_info & 1)) use_cheat++;
 
@@ -783,55 +794,64 @@ void I_StartFrame (void)
 			{
 			wiimote_scr_info^=1;	
 			}
-		}*/
+		}
 		
 	wiimote_scr_info&=1;
 
     //Wiimote + Nunchuk Controls
-	
-	if(wmote_datas && wmote_datas->exp.type==WPAD_EXP_NUNCHUK)
-		{
-
-		// fly
-		if(old_pad & WPAD_NUNCHUK_BUTTON_C)
-			{
-			if(old_pad & WPAD_BUTTON_LEFT) {k_left=1; k_alt=1;}
-			if(old_pad & WPAD_BUTTON_RIGHT) {k_right=1;k_alt=1;}
-
-			
-			if(old_pad & WPAD_BUTTON_UP) k_fly=-1;
-			if(old_pad & WPAD_BUTTON_DOWN) k_fly=1;
-			if(new_pad & WPAD_BUTTON_A) {k_fly=-2;new_pad&=~WPAD_BUTTON_A;}
-			}
-		else
-		if(!(old_pad & WPAD_NUNCHUK_BUTTON_Z))
-			{
-			// mirar
-			if(old_pad & WPAD_BUTTON_DOWN) k_del=1;
-			if(old_pad & WPAD_BUTTON_UP) k_pag_down=1;
-			}
-
-		// menu
+    if(wmote_datas && wmote_datas->exp.type==WPAD_EXP_NUNCHUK)
+	{
+		// Menu
 		if(new_pad & WPAD_BUTTON_HOME) k_esc=1;
-
+        
+		if(!MenuActive){
 		// stick
+		//Up
 		if(wmote_datas->exp.nunchuk.js.pos.y> (wmote_datas->exp.nunchuk.js.center.y+J_DEATHZ))
 			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jy & 1) k_up=1; w_jy&= ~1; ev.data3 = -1;} else w_jy|=1;
+		//Down
 		if(wmote_datas->exp.nunchuk.js.pos.y< (wmote_datas->exp.nunchuk.js.center.y-J_DEATHZ))
 			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jy & 2) k_down=1; w_jy&= ~2;ev.data3 = 1;} else w_jy|=2;
+        //Left Strafe
+		if((wmote_datas->exp.nunchuk.js.ang>=270-45 && wmote_datas->exp.nunchuk.js.ang<=270+45) && wmote_datas->exp.nunchuk.js.mag>=0.9)
+			{k_left=1; k_alt=1;}
+		//Right Strafe
+		if((wmote_datas->exp.nunchuk.js.ang>=90-45 && wmote_datas->exp.nunchuk.js.ang<=90+45) && wmote_datas->exp.nunchuk.js.mag>=0.9) 
+			{k_right=1;k_alt=1;}
+		}
+		
+        if(!MenuActive){	
+		//Turning via IR
+		//Right
+		if(wmote_datas->ir.x > 350)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jx & 1) k_right=1; w_jx&= ~1; ev.data2 = 1;} 
+		else w_jx|=1;
+		//Left
+		if(wmote_datas->ir.x < 290)
+			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jx & 2) k_left=1; w_jx&= ~2;ev.data2 = -1;} 
+		else w_jx|=2;
+		//Up
+		if(wmote_datas->ir.y < 140)
+			k_pag_down=1;
+		//Down
+		if(wmote_datas->ir.y > 340)
+		    k_del=1;
+		}
+		
+		if(MenuActive){
+		if(WPAD_ButtonsDown(0)&WPAD_BUTTON_DOWN)
+		{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jy & 2) k_down=1; w_jy&= ~2;ev.data3 = 1;} else w_jy|=2;
+		if(WPAD_ButtonsDown(0)&WPAD_BUTTON_UP)
+		{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jy & 1) k_up=1; w_jy&= ~1; ev.data3 = -1;} else w_jy|=1;
+		}
+		
+		if(old_pad & WPAD_NUNCHUK_BUTTON_Z) ev.data1|=4; // Run
 
-		if(wmote_datas->exp.nunchuk.js.pos.x> (wmote_datas->exp.nunchuk.js.center.x+J_DEATHZ))
-			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jx & 1) k_right=1; w_jx&= ~1; ev.data2 = 1;} else w_jx|=1;
-		if(wmote_datas->exp.nunchuk.js.pos.x< (wmote_datas->exp.nunchuk.js.center.x-J_DEATHZ))
-			{time_sleep=TIME_SLEEP_SCR;SetVideoSleep(0);if(w_jx & 2) k_left=1; w_jx&= ~2;ev.data2 = -1;} else w_jx|=2;
+		// Map
+		if(new_pad & WPAD_NUNCHUK_BUTTON_C) k_tab=1;
 
-		if(new_pad & WPAD_NUNCHUK_BUTTON_C) k_jump=1;  // jump
-		if(old_pad & WPAD_NUNCHUK_BUTTON_Z) ev.data1|=4; // run
-
-		// map
-		if(new_pad & WPAD_BUTTON_1) k_tab=1;
-
-		// change weapon
+		// Select alphanumeric character (for naming saves)
+		if(MenuActive){
 		if(old_pad & WPAD_NUNCHUK_BUTTON_Z)
 			{
 			if(new_pad & WPAD_BUTTON_LEFT) k_1=1;
@@ -839,12 +859,17 @@ void I_StartFrame (void)
 			if(new_pad & WPAD_BUTTON_RIGHT) k_3=1;
 			if(new_pad & WPAD_BUTTON_DOWN) k_4=1;
 			}
-		else
-			{
-			if(old_pad & WPAD_BUTTON_LEFT) {k_left=1; k_alt=1;}
-			if(old_pad & WPAD_BUTTON_RIGHT) {k_right=1;k_alt=1;}
-			}
-
+		}
+		
+		//Change Weapon
+		if(!MenuActive){
+			if(new_pad & WPAD_BUTTON_LEFT) k_1=1;
+			if(new_pad & WPAD_BUTTON_UP) k_2=1;
+			if(new_pad & WPAD_BUTTON_RIGHT) k_3=1;
+			if(new_pad & WPAD_BUTTON_DOWN) k_4=1;
+		}
+        
+		if(!MenuActive){
 		if(((new_pad & WPAD_BUTTON_A) && (old_pad & WPAD_BUTTON_B)))	
 			{k_enter=1;}  // use object
 		else
@@ -852,6 +877,11 @@ void I_StartFrame (void)
 			if(old_pad & WPAD_BUTTON_A) {ev.data1|=2;}  // open
 			if(old_pad & WPAD_BUTTON_B) ev.data1|=1; // fire
 			}
+		}
+		
+		if(MenuActive){
+		if(WPAD_ButtonsDown(0) & WPAD_BUTTON_A) {k_enter=1;}  // Select Option
+		}
 
 		if(new_pad & WPAD_BUTTON_MINUS) k_leftsel=1; // sel left object
 		if(new_pad & WPAD_BUTTON_PLUS) k_rightsel=1; // sel right object
@@ -930,6 +960,9 @@ void I_StartFrame (void)
 	
 	//GC Controls
 	
+	if(!wmote_datas || (wmote_datas->exp.type!=WPAD_EXP_CLASSIC && wmote_datas->exp.type!=WPAD_EXP_NUNCHUK))
+	{
+	
 		// Menu
 		if(PAD_ButtonsDown(0)&PAD_BUTTON_START) k_esc=1;
 
@@ -980,6 +1013,8 @@ void I_StartFrame (void)
 		if(PAD_ButtonsDown(0)&PAD_TRIGGER_L) k_rightsel=1; // Select right object
 
 		D_PostEvent (&ev);
+	
+	}
 	
 	//End GC Controls
 	
