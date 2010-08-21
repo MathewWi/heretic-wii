@@ -514,9 +514,6 @@ void wii_scr_update()
 		{
 		//Rewrite this with a proper Wii settings GUI later --Arikado
 		
-		SetTexture(NULL);
-		DrawFillBox(wmote_datas->ir.x, wmote_datas->ir.y, 40, 40, 0, 0xffffffff);
-		
 		/*SetTexture(NULL);
 		DrawFillBox(0, 0, SCR_WIDTH, SCR_HEIGHT, 0, (use_cheat>4) ? 0xff8f8f00 : 0xffff0000);
 
@@ -786,7 +783,7 @@ void I_StartFrame (void)
 	ev.data3 =  0;
 
 
-	if(wmote_datas)
+	/*if(wmote_datas)
 		{
 		if((new_pad & WPAD_BUTTON_B) && (wiimote_scr_info & 1)) use_cheat++;
 
@@ -794,7 +791,7 @@ void I_StartFrame (void)
 			{
 			wiimote_scr_info^=1;	
 			}
-		}
+		}*/
 		
 	wiimote_scr_info&=1;
 
