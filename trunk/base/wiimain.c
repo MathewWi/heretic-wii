@@ -942,7 +942,7 @@ void I_StartFrame (void)
 		
 		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_A) {ev.data1|=2;}  // Open
 		
-		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_B) ev.data1|=1; // Fire
+		if((WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_B) || (WPAD_ButtonsHeld(0)&WPAD_CLASSIC_BUTTON_B)) ev.data1|=1; // Fire
 			
 
 		if(WPAD_ButtonsDown(0)&WPAD_CLASSIC_BUTTON_FULL_R) k_leftsel=1; // Select left object
@@ -1003,7 +1003,7 @@ void I_StartFrame (void)
 		
 		if(PAD_ButtonsDown(0)&PAD_BUTTON_B) {ev.data1|=2;}  // Open
 		
-		if(PAD_ButtonsDown(0)&PAD_BUTTON_A) ev.data1|=1; // Fire
+		if((PAD_ButtonsDown(0)&PAD_BUTTON_A) || (PAD_ButtonsHeld(0)&PAD_BUTTON_A)) ev.data1|=1; // Fire
 			
 
 		if(PAD_ButtonsDown(0)&PAD_TRIGGER_R) k_leftsel=1; // Select left object
